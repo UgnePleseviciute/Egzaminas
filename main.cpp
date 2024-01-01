@@ -74,6 +74,7 @@ std::vector<std::string> findURLs(const std::string& text) {
     return urls;
 }
 
+
 int main() {
     std::ifstream inputFile("tekstas.txt");
 
