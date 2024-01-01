@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#include <regex> // Pridedame regex biblioteką
 
 // Funkcija, kuri pašalina skyrybos ženklus iš žodžio galo
 void removePunctuation(std::string& word) {
@@ -44,10 +45,27 @@ void printCrossReferenceToFile(const std::map<std::string, std::vector<int>>& wo
         }
 
         outputFile.close();
-        std::cout << "Cross-reference tipo lentelė isvesta i faila: " << filename << std::endl;
+        std::cout << "Cross-reference tipo lentele isvesta i faila: " << filename << std::endl;
     } else {
         std::cerr << "Nepavyko atidaryti failo " << filename << " rezultatams isvesti." << std::endl;
     }
+}
+
+// Funkcija, kuri išgauna URL adresus iš teksto
+std::vector<std::string> rastiURL(const std::string& text) {
+    std::vector<std::string> urlai;
+    // Naudojame regex URL adresams surasti
+    std::regex url_pattern(R"(\b(?:https?://|www\.)\S+\b)");
+
+    std::sregex_iterator iter(text.begin(), text.end(), url_pattern);
+    std::sregex_iterator end;
+
+    while (iter != end) {
+        urlai.push_back(iter->str());
+        ++iter;
+    }
+
+    return urlai;
 }
 
 int main() {
@@ -81,6 +99,19 @@ int main() {
 
     // Išvedame cross-reference tipo lentelę į failą
     printCrossReferenceToFile(wordLocations, "rezultatai.txt");
+
+    // Išgauname URL adresus iš teksto
+    std::ifstream urlInputFile("tekstas.txt");
+    std::string fullText((std::istreambuf_iterator<char>(urlInputFile)), std::istreambuf_iterator<char>());
+    urlInputFile.close();
+
+    std::vector<std::string> urlAdresai = rastiURL(fullText);
+
+    // Atspausdiname surastus URL adresus
+    std::cout << "Surasti URL adresai:" << std::endl;
+    for (const auto& url : urlAdresai) {
+        std::cout << url << std::endl;
+    }
 
     return 0;
 }
