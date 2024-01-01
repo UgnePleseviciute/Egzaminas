@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <regex>
 
+std::map<std::string, std::vector<int>> wordLocations;
+
 // Funkcija, kuri pasalina skyrybos zenklus is zodzio galo
 void removePunctuation(std::string& word) {
     word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
@@ -21,18 +23,18 @@ void toLowerCase(std::string& word) {
 void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocations, const std::vector<std::string>& urls, const std::string& filename) {
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
-//zodziu lentele
-        outputFile << std::left << std::setw(24) << "| Žodis" << std::setw(10) << "| Pasikartojimai " << std::setw(5) << "| Eilutės |" << std::endl;
-        outputFile << std::string(53, '-') << std::endl;
+        // Zodziu lenteles header'is
+        outputFile << std::left << std::setw(24) << "| Žodis" << std::setw(15) << "| Pasikartojimai " << std::setw(15) << "| Eilutės |" << std::endl;
+        outputFile << std::string(56, '-') << std::endl;
 
         for (const auto& pair : wordLocations) {
             const std::vector<int>& locations = pair.second;
 
-            // Tikriname, ar zodis pasikartoja daugiau nei vina karta
-            if (locations.size() > 1) {
-                outputFile << "| " << std::left << std::setw(20) << pair.first << " | " << std::setw(14) << locations.size() << " | ";
+            // Tikriname, ar zodis pasikartoja daugiau nei viena karta ir ar žodis nera skaicius
+            if (locations.size() > 1 && !std::all_of(pair.first.begin(), pair.first.end(), ::isdigit)) {
+                outputFile << "| " << std::left << std::setw(20) << pair.first << " | " << std::setw(16) << locations.size() << " | ";
 
-                // isveda kiekivnea  teksto vieta, kurioje zodis pasikartojo
+                //isveda kiekivena vieta kur tekstas pasikartojo
                 for (size_t i = 0; i < locations.size(); ++i) {
                     outputFile << locations[i];
                     if (i < locations.size() - 1) {
@@ -44,7 +46,7 @@ void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocat
             }
         }
 
-        // isveda URL adresus
+        // Isveda URL adresus
         outputFile << "\nSurasti URL adresai:\n";
         for (const auto& url : urls) {
             outputFile << url << std::endl;
@@ -56,7 +58,6 @@ void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocat
         std::cerr << "Nepavyko atidaryti failo " << filename << " rezultatams isvesti." << std::endl;
     }
 }
-
 // Funkcija, kuri isgauna URL adresus is teksto
 std::vector<std::string> findURLs(const std::string& text) {
     std::vector<std::string> urls;
@@ -75,7 +76,6 @@ std::vector<std::string> findURLs(const std::string& text) {
 
 int main() {
     std::ifstream inputFile("tekstas.txt");
-    std::map<std::string, std::vector<int>> wordLocations;
 
     if (!inputFile.is_open()) {
         std::cerr << "Nepavyko atidaryti failo." << std::endl;
@@ -92,7 +92,9 @@ int main() {
             removePunctuation(word);
             toLowerCase(word);
 
-            wordLocations[word].push_back(lineNumber);
+            if (!word.empty() && word.find_first_of(".,-„“–“”") == std::string::npos) {
+                wordLocations[word].push_back(lineNumber);
+            }
         }
 
         lineNumber++;
