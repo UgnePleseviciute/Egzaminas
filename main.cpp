@@ -5,34 +5,34 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
-#include <regex> // Pridedame regex biblioteką
+#include <regex>
 
-// Funkcija, kuri pašalina skyrybos ženklus iš žodžio galo
+// Funkcija, kuri pasalina skyrybos zenklus is zodzio galo
 void removePunctuation(std::string& word) {
     word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
 }
 
-// Funkcija, kuri konvertuoja žodį į mažąsias raides
+// Funkcija, kuri konvertuoja zodi i mazasias raides
 void toLowerCase(std::string& word) {
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
 }
 
-// Funkcija, kuri atspausdina cross-reference tipo lentelę į failą
-void printCrossReferenceToFile(const std::map<std::string, std::vector<int>>& wordLocations, const std::string& filename) {
+// Funkcija, kuri atspausdina cross-reference tipo lentele ir URL adresus i faila
+void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocations, const std::vector<std::string>& urls, const std::string& filename) {
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
-        // Išvedame lentelės antraštę
-        outputFile << std::left << std::setw(24) << "| Žodis" << std::setw(10) << "| Pasikartojimai " <<std::setw(5) << "| Eilutės |" << std::endl;
+//zodziu lentele
+        outputFile << std::left << std::setw(24) << "| Žodis" << std::setw(10) << "| Pasikartojimai " << std::setw(5) << "| Eilutės |" << std::endl;
         outputFile << std::string(53, '-') << std::endl;
 
         for (const auto& pair : wordLocations) {
             const std::vector<int>& locations = pair.second;
 
-            // Tikriname, ar žodas pasikartoja daugiau nei vieną kartą
+            // Tikriname, ar zodis pasikartoja daugiau nei vina karta
             if (locations.size() > 1) {
                 outputFile << "| " << std::left << std::setw(20) << pair.first << " | " << std::setw(14) << locations.size() << " | ";
 
-                // Išvedame kiekvieną teksto vietą, kurioje žodis pasikartojo
+                // isveda kiekivnea  teksto vieta, kurioje zodis pasikartojo
                 for (size_t i = 0; i < locations.size(); ++i) {
                     outputFile << locations[i];
                     if (i < locations.size() - 1) {
@@ -44,28 +44,33 @@ void printCrossReferenceToFile(const std::map<std::string, std::vector<int>>& wo
             }
         }
 
+        // isveda URL adresus
+        outputFile << "\nSurasti URL adresai:\n";
+        for (const auto& url : urls) {
+            outputFile << url << std::endl;
+        }
+
         outputFile.close();
-        std::cout << "Cross-reference tipo lentele isvesta i faila: " << filename << std::endl;
+        std::cout << "Rezultatai isvesti i faila: " << filename << std::endl;
     } else {
         std::cerr << "Nepavyko atidaryti failo " << filename << " rezultatams isvesti." << std::endl;
     }
 }
 
-// Funkcija, kuri išgauna URL adresus iš teksto
-std::vector<std::string> rastiURL(const std::string& text) {
-    std::vector<std::string> urlai;
-    // Naudojame regex URL adresams surasti
-    std::regex url_pattern(R"(\b(?:https?://|www\.)\S+\b)");
+// Funkcija, kuri isgauna URL adresus is teksto
+std::vector<std::string> findURLs(const std::string& text) {
+    std::vector<std::string> urls;
+    std::regex urlPattern(R"(\b(?:https?://|www\.)\S+\b)");
 
-    std::sregex_iterator iter(text.begin(), text.end(), url_pattern);
+    std::sregex_iterator iter(text.begin(), text.end(), urlPattern);
     std::sregex_iterator end;
 
     while (iter != end) {
-        urlai.push_back(iter->str());
+        urls.push_back(iter->str());
         ++iter;
     }
 
-    return urlai;
+    return urls;
 }
 
 int main() {
@@ -84,11 +89,9 @@ int main() {
         std::string word;
 
         while (iss >> word) {
-            // Pašaliname skyrybos ženklus ir konvertuojame į mažąsias raides
             removePunctuation(word);
             toLowerCase(word);
 
-            // Atnaujiname žodžio vietas tekste
             wordLocations[word].push_back(lineNumber);
         }
 
@@ -97,21 +100,13 @@ int main() {
 
     inputFile.close();
 
-    // Išvedame cross-reference tipo lentelę į failą
-    printCrossReferenceToFile(wordLocations, "rezultatai.txt");
-
-    // Išgauname URL adresus iš teksto
     std::ifstream urlInputFile("tekstas.txt");
     std::string fullText((std::istreambuf_iterator<char>(urlInputFile)), std::istreambuf_iterator<char>());
     urlInputFile.close();
 
-    std::vector<std::string> urlAdresai = rastiURL(fullText);
+    std::vector<std::string> urls = findURLs(fullText);
 
-    // Atspausdiname surastus URL adresus
-    std::cout << "Surasti URL adresai:" << std::endl;
-    for (const auto& url : urlAdresai) {
-        std::cout << url << std::endl;
-    }
+    printResultsToFile(wordLocations, urls, "rezultatai.txt");
 
     return 0;
 }
