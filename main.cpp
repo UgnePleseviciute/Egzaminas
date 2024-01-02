@@ -7,27 +7,27 @@
 #include <iomanip>
 #include <regex>
 
-std::map<std::string, std::vector<int>> wordLocations;
+std::map<std::string, std::vector<int>> zodziuVietos;
 
 // Funkcija, kuri pasalina skyrybos zenklus is zodzio galo
-void removePunctuation(std::string& word) {
-    word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
+void SkirybosZenkluSalinimas(std::string& word) {
+    word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end()); //tikrina ar zodzio pabaigoje yra skyrybos zenklu
 }
 
 // Funkcija, kuri konvertuoja zodi i mazasias raides
-void toLowerCase(std::string& word) {
+void Mazasias(std::string& word) {
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
 }
 
 // Funkcija, kuri atspausdina cross-reference tipo lentele ir URL adresus i faila
-void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocations, const std::vector<std::string>& urls, const std::string& filename) {
+void printResultsToFile(const std::map<std::string, std::vector<int>>& zodziuVietos, const std::vector<std::string>& urls, const std::string& filename) {
     std::ofstream outputFile(filename);
     if (outputFile.is_open()) {
         // Zodziu lenteles header'is
         outputFile << std::left << std::setw(24) << "| Žodis" << std::setw(15) << "| Pasikartojimai " << std::setw(15) << "| Eilutės |" << std::endl;
         outputFile << std::string(56, '-') << std::endl;
 
-        for (const auto& pair : wordLocations) {
+        for (const auto& pair : zodziuVietos) {
             const std::vector<int>& locations = pair.second;
 
             // Tikriname, ar zodis pasikartoja daugiau nei viena karta ir ar žodis nera skaicius
@@ -61,9 +61,9 @@ void printResultsToFile(const std::map<std::string, std::vector<int>>& wordLocat
 // Funkcija, kuri isgauna URL adresus is teksto
 std::vector<std::string> findURLs(const std::string& text) {
     std::vector<std::string> urls;
-    std::regex urlPattern(R"(\b(?:https?://|www\.)\S+\b)");
+    std::regex linkas(R"(\b(?:https?://|www\.)\S+\b)"); //cia regex specialus teksto sablonas kuriuo siekiama atpazinti tam tikrus norimus dalykus
 
-    std::sregex_iterator iter(text.begin(), text.end(), urlPattern);
+    std::sregex_iterator iter(text.begin(), text.end(), linkas);
     std::sregex_iterator end;
 
     while (iter != end) {
@@ -90,11 +90,11 @@ int main() {
         std::string word;
 
         while (iss >> word) {
-            removePunctuation(word);
-            toLowerCase(word);
+            SkirybosZenkluSalinimas(word);
+            Mazasias(word);
 
             if (!word.empty() && word.find_first_of(".,-„“–“”") == std::string::npos) {
-                wordLocations[word].push_back(lineNumber);
+                zodziuVietos[word].push_back(lineNumber);
             }
         }
 
@@ -109,7 +109,7 @@ int main() {
 
     std::vector<std::string> urls = findURLs(fullText);
 
-    printResultsToFile(wordLocations, urls, "rezultatai.txt");
+    printResultsToFile(zodziuVietos, urls, "rezultatai.txt");
 
     return 0;
 }
